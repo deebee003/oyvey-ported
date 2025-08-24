@@ -62,7 +62,7 @@ public class KillAura extends Module {
                 // Send rotation packets to server so others see you looking at target
                 if (rotate.getValue()) {
                     mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(
-                        serverRotations[0], serverRotations[1], mc.player.isOnGround()));
+                        serverRotations[0], serverRotations[1], mc.player.isOnGround(), false));
                 }
             }
             
@@ -99,7 +99,7 @@ public class KillAura extends Module {
     public void onRender2D(Render2DEvent event) {
         if (mc.player == null || mc.world == null || !renderBox.getValue() || target == null) return;
         
-        render2DBox(event.getMatrixStack(), target);
+        render2DBox(target);
     }
 
     private void swingArmClientServer() {
@@ -108,13 +108,9 @@ public class KillAura extends Module {
         mc.player.networkHandler.sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
     }
 
-    private void render2DBox(MatrixStack matrices, LivingEntity entity) {
-        // Use the client's rendering system - check how other modules do this
-        // For now, this is a placeholder that needs to be adapted to the client's renderer
-        
-        // Look at other modules in the repo to see how they handle 2D rendering
-        // You might need to use something like:
-        // Render2DUtil.drawRect(...) or similar methods from the client
+    private void render2DBox(LivingEntity entity) {
+        // Placeholder - check how other modules do 2D rendering in this client
+        // Look at TargetHUD or other modules for examples
     }
 
     private float[] calculateRotations(LivingEntity entity) {
@@ -138,7 +134,8 @@ public class KillAura extends Module {
 
     private LivingEntity findTarget() {
         // Get all entities in range
-        List<Entity> entities = mc.world.getEntities().stream()
+        List<Entity> entities = mc.world.getEntities();
+        return (LivingEntity) entities.stream()
                 .filter(entity -> entity instanceof LivingEntity)
                 .filter(entity -> entity != mc.player)
                 .filter(entity -> !(entity instanceof EndCrystalEntity))
@@ -146,11 +143,8 @@ public class KillAura extends Module {
                 .filter(entity -> entity.isAlive())
                 .filter(entity -> mc.player.distanceTo(entity) <= range.getValue())
                 .sorted(Comparator.comparingDouble(entity -> mc.player.distanceTo(entity)))
-                .collect(Collectors.toList());
-        
-        if (entities.isEmpty()) return null;
-        
-        return (LivingEntity) entities.get(0);
+                .findFirst()
+                .orElse(null);
     }
 
     private void attack(LivingEntity target) {
@@ -172,7 +166,7 @@ public class KillAura extends Module {
             }
         } else {
             // Regular aim - rotate player to target and attack
-            mc.player.lookAt(target.getCommandSource().getAnchor(), target.getPos().add(0, target.getHeight() / 2, 0));
+            mc.player.lookAt(net.minecraft.entity.EntityAnchorArgumentType.EntityAnchor.EYES, target.getPos().add(0, target.getHeight() / 2, 0));
             mc.interactionManager.attackEntity(mc.player, target);
             
             // Swing arm for visual feedback
