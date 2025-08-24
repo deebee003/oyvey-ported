@@ -95,7 +95,7 @@ public class KillAura extends Module {
         }
     }
 
-    @Subscribe
+    @Override
     public void onRender2D(Render2DEvent event) {
         if (mc.player == null || mc.world == null || !renderBox.getValue() || target == null) return;
         
@@ -109,53 +109,12 @@ public class KillAura extends Module {
     }
 
     private void render2DBox(MatrixStack matrices, LivingEntity entity) {
-        // Calculate screen position
-        Vec3d targetPos = entity.getPos().add(0, entity.getHeight() / 2, 0);
-        net.minecraft.util.math.Vector4f screenPos = new net.minecraft.util.math.Vector4f(
-            (float) targetPos.x, (float) targetPos.y, (float) targetPos.z, 1.0f
-        );
+        // Use the client's rendering system - check how other modules do this
+        // For now, this is a placeholder that needs to be adapted to the client's renderer
         
-        screenPos.transform(mc.gameRenderer.getBasicProjectionMatrix(mc.gameRenderer.getCamera().getPos()));
-        if (screenPos.getW() > 0.0f) {
-            screenPos.perspectiveDivide();
-            float screenX = (screenPos.getX() + 1.0f) / 2.0f * mc.getWindow().getWidth();
-            float screenY = (1.0f - screenPos.getY()) / 2.0f * mc.getWindow().getHeight();
-            
-            // Draw 2D box around target
-            float boxSize = 20.0f; // Size of the box
-            float halfSize = boxSize / 2;
-            
-            // Convert color integer to RGB components
-            int color = boxColor.getValue();
-            float red = ((color >> 16) & 0xFF) / 255.0f;
-            float green = ((color >> 8) & 0xFF) / 255.0f;
-            float blue = (color & 0xFF) / 255.0f;
-            float alpha = ((color >> 24) & 0xFF) / 255.0f;
-            
-            // Draw rectangle outline
-            drawRectOutline(matrices, screenX - halfSize, screenY - halfSize, boxSize, boxSize, 2.0f, red, green, blue, alpha);
-        }
-    }
-
-    private void drawRectOutline(MatrixStack matrices, float x, float y, float width, float height, float thickness, float r, float g, float b, float a) {
-        // Top line
-        drawRect(matrices, x, y, width, thickness, r, g, b, a);
-        // Bottom line
-        drawRect(matrices, x, y + height - thickness, width, thickness, r, g, b, a);
-        // Left line
-        drawRect(matrices, x, y + thickness, thickness, height - 2 * thickness, r, g, b, a);
-        // Right line
-        drawRect(matrices, x + width - thickness, y + thickness, thickness, height - 2 * thickness, r, g, b, a);
-    }
-
-    private void drawRect(MatrixStack matrices, float x, float y, float width, float height, float r, float g, float b, float a) {
-        // Simplified rectangle drawing - you might need to use your client's rendering system
-        MatrixStack matrixStack = new MatrixStack();
-        matrixStack.push();
-        matrixStack.translate(x, y, 0);
-        
-        // Fill would go here, but for simplicity we're just outlining
-        matrixStack.pop();
+        // Look at other modules in the repo to see how they handle 2D rendering
+        // You might need to use something like:
+        // Render2DUtil.drawRect(...) or similar methods from the client
     }
 
     private float[] calculateRotations(LivingEntity entity) {
@@ -210,11 +169,6 @@ public class KillAura extends Module {
                 boolean bl = mc.player.horizontalCollision;
                 mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.1f, mc.player.getZ(), false, bl));
                 mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY(), mc.player.getZ(), false, bl));
-            }
-            
-            // Handle block hit if enabled
-            if (blockHit.getValue()) {
-                // Block hit already includes arm swing in the packet handler
             }
         } else {
             // Regular aim - rotate player to target and attack
